@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave — Главная</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .hero-banner {
+      background: linear-gradient(120deg, #7F77DD 0%, #534AB7 60%, #3C3489 100%);
+      border-radius: 16px; padding: 32px 36px; color: #fff;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 36px; min-height: 180px; position: relative; overflow: hidden;
+    }
+    .hero-banner::before { content:''; position:absolute; right:-30px; top:-30px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,.06); }
+    .hero-banner::after  { content:''; position:absolute; right:60px; bottom:-50px; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,.04); }
+    .hero-label { font-size:11px; letter-spacing:.1em; text-transform:uppercase; opacity:.65; margin-bottom:8px; }
+    .hero-title { font-family:'DM Serif Display',serif; font-size:32px; line-height:1.1; letter-spacing:-.5px; margin-bottom:6px; }
+    .hero-sub   { font-size:13px; opacity:.7; margin-bottom:20px; }
+    .hero-play  { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:20px; padding:8px 18px; font-size:13px; font-weight:500; cursor:pointer; backdrop-filter:blur(4px); transition:background .15s; font-family:'DM Sans',sans-serif; }
+    .hero-play:hover { background:rgba(255,255,255,.22); }
+    .hero-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; z-index:1; }
+    .hero-stat  { font-size:11px; opacity:.55; }
+    .hero-num   { font-size:28px; font-weight:300; letter-spacing:-1px; opacity:.9; }
+
+    .recent-grid { grid-template-columns: repeat(3,1fr); }
+    .recent-card { background:var(--surface); border:0.5px solid var(--border); border-radius:10px; display:flex; align-items:center; gap:12px; padding:10px 12px; cursor:pointer; transition:background .15s,border-color .15s; }
+    .recent-card:hover { background:var(--surface2); border-color:var(--border-mid); }
+    .rc-thumb { width:42px; height:42px; border-radius:8px; flex-shrink:0; object-fit:cover; }
+    .rc-name  { font-size:13px; font-weight:500; }
+    .rc-type  { font-size:11px; color:var(--text-2); margin-top:1px; }
+
+    .rec-grid { grid-template-columns: repeat(4,1fr); }
+    .mix-card { background:var(--surface); border:0.5px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:border-color .15s,transform .15s; }
+    .mix-card:hover { border-color:var(--border-mid); transform:translateY(-2px); }
+    .mix-thumb { width:100%; aspect-ratio:1; position:relative; overflow:hidden; }
+    .mix-thumb img { width:100%; height:100%; object-fit:cover; }
+    .mix-thumb-bg { width:100%; height:100%; }
+    .mix-play-overlay { position:absolute; inset:0; background:rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s; }
+    .mix-card:hover .mix-play-overlay { opacity:1; }
+    .play-circle { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; }
+    .mix-body  { padding:10px 12px 12px; }
+    .mix-name  { font-size:13px; font-weight:500; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mix-desc  { font-size:11px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .releases-grid { grid-template-columns: repeat(5,1fr); gap:12px; }
+    .release-card  { cursor:pointer; }
+    .release-thumb { width:100%; aspect-ratio:1; border-radius:10px; margin-bottom:8px; object-fit:cover; overflow:hidden; }
+    .release-thumb img { width:100%; height:100%; object-fit:cover; }
+    .release-name   { font-size:12px; font-weight:500; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .release-artist { font-size:11px; color:var(--text-2); }
+
+    .grad-thumb { width:100%; height:100%; }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="greeting">Добрый день 👋</div>
+      <div class="top-right">
+        <div class="icon-btn" onclick="window.location.href='login.html'">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+            <circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero-banner fade-up" id="heroBanner">
+      <div>
+        <div class="hero-label">Рекомендация дня</div>
+        <div class="hero-title" id="heroTitle">Загрузка...</div>
+        <div class="hero-sub"  id="heroSub">—</div>
+        <button class="hero-play" id="heroPlayBtn">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5V3z"/></svg>
+          Слушать
+        </button>
+      </div>
+      <div class="hero-right">
+        <div class="hero-num" id="heroNum">—</div>
+        <div class="hero-stat">треков</div>
+      </div>
+    </div>
+
+    <!-- RECENTLY PLAYED -->
+    <section class="fade-up">
+      <div class="section-header">
+      <div class="section-title">Недавно играли</div>
+      <span class="see-all" onclick="window.location.href='favorites.html'">Смотреть всё</span>
+    </div>
+    <div class="card-grid recent-grid" id="recentGrid">
+      <div class="recent-card">
+        <div class="rc-thumb skeleton"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:13px;width:80%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:50%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="recent-card">
+        <div class="rc-thumb skeleton"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:13px;width:80%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:50%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="recent-card">
+        <div class="rc-thumb skeleton"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:13px;width:80%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:50%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="recent-card">
+        <div class="rc-thumb skeleton"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:13px;width:80%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:50%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="recent-card">
+        <div class="rc-thumb skeleton"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:13px;width:80%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:50%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="recent-card">
+        <div class="rc-thumb skeleton"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:13px;width:80%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:50%;border-radius:4px"></div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- RECOMMENDATIONS -->
+    <section class="fade-up">
+      <div class="section-header">
+      <div class="section-title">Для вас</div>
+      <span class="see-all" onclick="window.location.href='browse.html'">Смотреть всё</span>
+    </div>
+    <div class="card-grid rec-grid" id="recGrid">
+      <div class="mix-card">
+        <div class="mix-thumb skeleton" style="aspect-ratio:1"></div>
+        <div class="mix-body">
+          <div class="skeleton" style="height:13px;width:70%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:55%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="mix-card">
+        <div class="mix-thumb skeleton" style="aspect-ratio:1"></div>
+        <div class="mix-body">
+          <div class="skeleton" style="height:13px;width:70%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:55%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="mix-card">
+        <div class="mix-thumb skeleton" style="aspect-ratio:1"></div>
+        <div class="mix-body">
+          <div class="skeleton" style="height:13px;width:70%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:55%;border-radius:4px"></div>
+        </div>
+      </div>
+      <div class="mix-card">
+        <div class="mix-thumb skeleton" style="aspect-ratio:1"></div>
+        <div class="mix-body">
+          <div class="skeleton" style="height:13px;width:70%;margin-bottom:6px;border-radius:4px"></div>
+          <div class="skeleton" style="height:11px;width:55%;border-radius:4px"></div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <!-- NEW RELEASES -->
+    <section class="fade-up">
+      <div class="section-header">
+      <div class="section-title">Новые релизы</div>
+      <span class="see-all" onclick="window.location.href='albums.html'">Смотреть всё</span>
+    </div>
+    <div class="card-grid releases-grid" id="releasesGrid">
+      <div class="release-card">
+        <div class="release-thumb skeleton"></div>
+        <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px;border-radius:4px"></div>
+        <div class="skeleton" style="height:11px;width:60%;border-radius:4px"></div>
+      </div>
+      <div class="release-card">
+        <div class="release-thumb skeleton"></div>
+        <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px;border-radius:4px"></div>
+        <div class="skeleton" style="height:11px;width:60%;border-radius:4px"></div>
+      </div>
+      <div class="release-card">
+        <div class="release-thumb skeleton"></div>
+        <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px;border-radius:4px"></div>
+        <div class="skeleton" style="height:11px;width:60%;border-radius:4px"></div>
+      </div>
+      <div class="release-card">
+        <div class="release-thumb skeleton"></div>
+        <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px;border-radius:4px"></div>
+        <div class="skeleton" style="height:11px;width:60%;border-radius:4px"></div>
+      </div>
+      <div class="release-card">
+        <div class="release-thumb skeleton"></div>
+        <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px;border-radius:4px"></div>
+        <div class="skeleton" style="height:11px;width:60%;border-radius:4px"></div>
+      </div>
+    </div>
+    </section>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="shared.js"></script>
+<script>
+const GRADIENTS = [
+  'linear-gradient(145deg,#CECBF6,#7F77DD,#3C3489)',
+  'linear-gradient(145deg,#9FE1CB,#1D9E75,#085041)',
+  'linear-gradient(145deg,#F5C4B3,#D85A30,#4A1B0C)',
+  'linear-gradient(145deg,#FAC775,#BA7517,#412402)',
+  'linear-gradient(145deg,#F5C0D4,#D4537E,#4A1020)',
+  'linear-gradient(145deg,#C5E8AF,#639922,#1E3A08)',
+];
+
+const gradThumb = (i) =>
+  `<div class="grad-thumb" style="background:${GRADIENTS[i % GRADIENTS.length]}"></div>`;
+
+// Время суток
+const h = new Date().getHours();
+document.getElementById('greeting').textContent =
+  h < 12 ? 'Доброе утро 👋' : h < 18 ? 'Добрый день 👋' : 'Добрый вечер 👋';
+
+// Рендер недавних треков
+function renderRecent(tracks) {
+  const g = document.getElementById('recentGrid');
+  if (!tracks.length) { g.innerHTML = '<div class="empty-state"><p>История пуста</p></div>'; return; }
+  g.innerHTML = tracks.slice(0,6).map((t, i) => `
+    <div class="recent-card" onclick="playTrack(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+      ${t.cover_url
+        ? `<img class="rc-thumb" src="${t.cover_url}" alt="">`
+        : `<div class="rc-thumb" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
+      <div>
+        <div class="rc-name">${t.track_title || t.title}</div>
+        <div class="rc-type">${t.artist_name || '—'}</div>
+      </div>
+      <button class="icon-btn" onclick="addToFavorites(${JSON.stringify(t).replace(/"/g,'&quot;')}, event)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M8 13.5S1.5 9.5 1.5 5.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 14.5 5.5c0 4-6.5 8-6.5 8z"/>
+        </svg>
+      </button>
+    </div>`).join('');
+}
+
+// Рендер рекомендаций
+function renderRec(tracks) {
+  const g = document.getElementById('recGrid');
+  if (!tracks.length) { g.innerHTML = '<div class="empty-state"><p>Нет рекомендаций</p></div>'; return; }
+  g.innerHTML = tracks.slice(0,4).map((t, i) => `
+    <div class="mix-card" onclick="playTrack(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+      <div class="mix-thumb">
+        ${t.cover_url
+          ? `<img src="${t.cover_url}" alt="" style="width:100%;height:100%;object-fit:cover">`
+          : `<div style="width:100%;height:100%;background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
+        <div class="mix-play-overlay">
+          <div class="play-circle"><svg width="14" height="14" viewBox="0 0 16 16" fill="#333"><path d="M4 3l10 5-10 5V3z"/></svg></div>
+        </div>
+      </div>
+      <div class="mix-body">
+        <div class="mix-name">${t.track_title || t.title}</div>
+        <div class="mix-desc">${t.artist_name || '—'}</div>
+        <div style="margin-top:8px">
+          <button class="icon-btn" onclick="addToFavorites(${JSON.stringify(t).replace(/"/g,'&quot;')}, event)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M8 13.5S1.5 9.5 1.5 5.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 14.5 5.5c0 4-6.5 8-6.5 8z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// Рендер новых релизов (альбомы)
+function renderReleases(albums) {
+  const g = document.getElementById('releasesGrid');
+  if (!albums.length) { g.innerHTML = ''; return; }
+  g.innerHTML = albums.slice(0,5).map((a, i) => `
+    <div class="release-card" onclick="window.location.href='albums.html'">
+      <div class="release-thumb">
+        ${a.cover_url
+          ? `<img src="${a.cover_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
+          : `<div style="width:100%;height:100%;background:${GRADIENTS[i%GRADIENTS.length]};border-radius:10px"></div>`}
+      </div>
+      <div class="release-name">${a.title}</div>
+      <div class="release-artist">${a.artist_name || '—'}</div>
+    </div>`).join('');
+}
+
+// Hero — первый трек из рекомендаций
+function renderHero(track) {
+  if (!track) return;
+  document.getElementById('heroTitle').textContent = track.track_title || track.title;
+  document.getElementById('heroSub').textContent =
+    [track.artist_name, track.album_title].filter(Boolean).join(' · ');
+  document.getElementById('heroNum').textContent = '1';
+  document.getElementById('heroPlayBtn').onclick = () => playTrack(track);
+}
+
+function playTrack(t) {
+  Player.play(t);
+}
+
+function toJamendoTrack(t) {
+  return {
+    track_id: null,
+    track_title: t.name,
+    title: t.name,
+    artist_name: t.artist_name,
+    album_title: t.album_name,
+    duration: t.duration,
+    audio_url: t.audio,
+    cover_url: t.image,
+  };
+}
+
+// Загрузка данных
+async function loadPage() {
+  try {
+    const [tracksData, albumsData] = await Promise.all([
+      API.tracks.list(20, 0),
+      API.albums.list(5, 0),
+    ]);
+    const tracks = (tracksData.tracks || []).filter(t => t.audio_url);
+
+    renderHero(tracks[0]);
+    renderRec(tracks.slice(0, 8));
+    renderReleases(albumsData.albums || []);
+
+    // История (только если залогинен)
+    if (API.isLoggedIn()) {
+      try {
+        const histData = await API.user.history();
+        const recentTracks = (histData.history || []).filter(t => t.audio_url);
+        renderRecent(recentTracks.length ? recentTracks : tracks.slice(0, 6));
+      } catch { renderRecent(tracks.slice(0, 6)); }
+    } else {
+      renderRecent(tracks.slice(0, 6));
+    }
+  } catch (e) {
+    console.error('Ошибка загрузки:', e);
+    showToast('Ошибка загрузки данных');
+  }
+}
+
+loadPage();
+</script>
+</body>
+</html>

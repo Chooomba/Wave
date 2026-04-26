@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave — Плейлисты</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .playlists-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 14px;
+      margin-bottom: 36px;
+    }
+    .playlist-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 14px; overflow: hidden; cursor: pointer;
+      transition: border-color .15s, transform .15s;
+    }
+    .playlist-card:hover { border-color: var(--border-mid); transform: translateY(-2px); }
+    .playlist-cover {
+      width: 100%; aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+    }
+    .playlist-body { padding: 12px 14px 14px; }
+    .playlist-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+    .playlist-count { font-size: 11px; color: var(--text-2); }
+
+    .new-playlist-card {
+      background: var(--surface); border: 0.5px dashed var(--border-mid);
+      border-radius: 14px; cursor: pointer; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; min-height: 180px; color: var(--text-3);
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .new-playlist-card:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+    .new-playlist-card span { font-size: 13px; font-weight: 500; }
+
+    /* Детальный вид плейлиста */
+    .playlist-detail { display: none; }
+    .detail-header {
+      display: flex; gap: 24px; align-items: flex-end; margin-bottom: 32px;
+    }
+    .detail-cover {
+      width: 140px; height: 140px; border-radius: 14px;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 52px;
+    }
+    .detail-meta { flex: 1; }
+    .detail-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .detail-title { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -.5px; margin-bottom: 6px; }
+    .detail-sub { font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
+    .detail-play {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--text); color: #fff; border: none;
+      border-radius: 20px; padding: 10px 22px; font-size: 13px;
+      font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: opacity .15s;
+    }
+    .detail-play:hover { opacity: .85; }
+    .back-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 0.5px solid var(--border-mid); background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-2); transition: background .15s;
+      margin-bottom: 20px;
+    }
+    .back-btn:hover { background: var(--surface2); }
+
+    /* Модалка создания плейлиста */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border-radius: 16px; padding: 28px;
+      width: 360px; transform: translateY(10px); transition: transform .2s;
+    }
+    .modal-overlay.show .modal { transform: translateY(0); }
+    .modal-title { font-size: 17px; font-weight: 500; margin-bottom: 18px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .btn-cancel {
+      flex: 1; padding: 10px; border: 0.5px solid var(--border-mid);
+      border-radius: 10px; background: var(--surface); font-size: 13px;
+      cursor: pointer; font-family: 'DM Sans', sans-serif; color: var(--text-2);
+      transition: background .15s;
+    }
+    .btn-cancel:hover { background: var(--surface2); }
+    .btn-create {
+      flex: 1; padding: 10px; background: var(--text); color: #fff;
+      border: none; border-radius: 10px; font-size: 13px; font-weight: 500;
+      cursor: pointer; font-family: 'DM Sans', sans-serif; transition: opacity .15s;
+    }
+    .btn-create:hover { opacity: .85; }
+
+    .playlist-track-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 10px; border-radius: 10px; cursor: pointer;
+      transition: background .12s;
+    }
+    .playlist-track-row:hover { background: var(--surface); }
+    .pt-thumb { width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; object-fit: cover; }
+    .pt-thumb-div { width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; }
+    .pt-info { flex: 1; min-width: 0; }
+    .pt-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pt-artist { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+
+    .login-prompt { text-align: center; padding: 80px 20px; }
+    .login-prompt p { font-size: 14px; color: var(--text-2); margin-bottom: 16px; }
+    .login-prompt a { display: inline-block; padding: 10px 24px; background: var(--text); color: #fff; border-radius: 10px; font-size: 13px; font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">Плейлисты</div>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Детальный вид -->
+    <div class="playlist-detail" id="playlistDetail"></div>
+  </main>
+</div>
+
+<!-- Модалка -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Новый плейлист</div>
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input class="form-input" id="playlistNameInput" placeholder="Мой плейлист"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Отмена</button>
+      <button class="btn-create" id="modalCreate">Создать</button>
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="shared.js"></script>
+<script>
+const COVERS = ['🎵','🎶','🎸','🎹','🎺','🎻','🥁','🎤'];
+const COVER_BG = [
+  'linear-gradient(135deg,#EEEDFE,#CECBF6)',
+  'linear-gradient(135deg,#E1F5EE,#9FE1CB)',
+  'linear-gradient(135deg,#FAECE7,#F5C4B3)',
+  'linear-gradient(135deg,#FAEEDA,#FAC775)',
+  'linear-gradient(135deg,#FBEAF0,#F5C0D4)',
+  'linear-gradient(135deg,#EAF3DE,#C5E8AF)',
+];
+const GRADIENTS = [
+  'linear-gradient(135deg,#CECBF6,#7F77DD)',
+  'linear-gradient(135deg,#9FE1CB,#1D9E75)',
+  'linear-gradient(135deg,#F5C4B3,#D85A30)',
+  'linear-gradient(135deg,#FAC775,#BA7517)',
+];
+
+let playlists = [];
+
+async function load() {
+  const content = document.getElementById('content');
+  if (!API.isLoggedIn()) {
+    content.innerHTML = `
+      <div class="login-prompt">
+        <p>Войдите, чтобы создавать плейлисты</p>
+        <a href="login.html">Войти</a>
+      </div>`;
+    return;
+  }
+
+  content.innerHTML = '<div class="skeleton" style="height:200px;border-radius:12px"></div>';
+  try {
+    const data = await API.user.playlists();
+    playlists = data.playlists || [];
+    renderPlaylists();
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><p>Ошибка: ${e.message}</p></div>`;
+  }
+}
+
+function renderPlaylists() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="playlists-grid">
+      ${playlists.map((p, i) => `
+        <div class="playlist-card" onclick="openPlaylist(${p.playlist_id}, '${p.playlist_name}', ${i})">
+          <div class="playlist-cover" style="background:${COVER_BG[i%COVER_BG.length]}">
+            ${COVERS[i%COVERS.length]}
+          </div>
+          <div class="playlist-body">
+            <div class="playlist-name">${p.playlist_name}</div>
+            <div class="playlist-count">Плейлист</div>
+          </div>
+        </div>`).join('')}
+      <div class="new-playlist-card" onclick="showModal()">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M8 3v10M3 8h10" stroke-linecap="round"/>
+        </svg>
+        <span>Новый плейлист</span>
+      </div>
+    </div>`;
+}
+
+async function openPlaylist(id, name, idx) {
+  const detail = document.getElementById('playlistDetail');
+  const content = document.getElementById('content');
+  content.style.display = 'none';
+  detail.style.display  = 'block';
+  detail.innerHTML = `
+    <div class="back-btn" onclick="closeDetail()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M10 3L5 8l5 5"/>
+      </svg>
+    </div>
+    <div class="detail-header">
+      <div class="detail-cover" style="background:${COVER_BG[idx%COVER_BG.length]}">${COVERS[idx%COVERS.length]}</div>
+      <div class="detail-meta">
+        <div class="detail-label">Плейлист</div>
+        <div class="detail-title">${name}</div>
+        <div class="detail-sub" id="detailSub">Загрузка...</div>
+        <button class="detail-play" id="detailPlayBtn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5V3z"/></svg>
+          Слушать
+        </button>
+      </div>
+    </div>
+    <div class="track-list" id="detailTracks">
+      <div class="skeleton" style="height:200px;border-radius:12px"></div>
+    </div>`;
+
+  try {
+    const data = await API.user.playlistTracks(id);
+    const tracks = data.tracks || [];
+    document.getElementById('detailSub').textContent = `${tracks.length} треков`;
+
+    if (!tracks.length) {
+      document.getElementById('detailTracks').innerHTML = '<div class="empty-state"><p>Плейлист пуст</p></div>';
+      return;
+    }
+
+    document.getElementById('detailTracks').innerHTML = tracks.map((t, i) => `
+      <div class="playlist-track-row" onclick="playPlaylist(${i})">
+        ${t.cover_url
+          ? `<img class="pt-thumb" src="${t.cover_url}" alt="">`
+          : `<div class="pt-thumb-div" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
+        <div class="pt-info">
+          <div class="pt-name">${t.track_title}</div>
+          <div class="pt-artist">${t.artist_name || '—'}</div>
+        </div>
+      </div>`).join('');
+
+    window._playlistTracks = tracks;
+    document.getElementById('detailPlayBtn').onclick = () => Player.setQueue(tracks, 0);
+  } catch (e) {
+    document.getElementById('detailTracks').innerHTML = `<div class="empty-state"><p>Ошибка: ${e.message}</p></div>`;
+  }
+}
+
+function closeDetail() {
+  document.getElementById('playlistDetail').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+function playPlaylist(idx) {
+  const tracks = window._playlistTracks || [];
+  if (tracks[idx]) Player.setQueue(tracks, idx);
+}
+
+// Модалка
+function showModal() {
+  document.getElementById('modalOverlay').classList.add('show');
+  document.getElementById('playlistNameInput').focus();
+}
+function hideModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('playlistNameInput').value = '';
+}
+document.getElementById('modalCancel').addEventListener('click', hideModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) hideModal();
+});
+document.getElementById('modalCreate').addEventListener('click', async () => {
+  const name = document.getElementById('playlistNameInput').value.trim();
+  if (!name) return;
+  try {
+    await API.user.createPlaylist(name);
+    hideModal();
+    showToast('Плейлист создан');
+    load();
+  } catch (e) { showToast('Ошибка: ' + e.message); }
+});
+document.getElementById('playlistNameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('modalCreate').click();
+});
+
+load();
+</script>
+</body>
+</html>

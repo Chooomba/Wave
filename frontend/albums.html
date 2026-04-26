@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave — Альбомы</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .albums-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 14px;
+      margin-bottom: 36px;
+    }
+    .album-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 12px; overflow: hidden; cursor: pointer;
+      transition: border-color .15s, transform .15s;
+    }
+    .album-card:hover { border-color: var(--border-mid); transform: translateY(-2px); }
+    .album-thumb {
+      width: 100%; aspect-ratio: 1; overflow: hidden; position: relative;
+    }
+    .album-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .album-thumb-div { width: 100%; height: 100%; }
+    .album-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,.25);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .15s;
+    }
+    .album-card:hover .album-overlay { opacity: 1; }
+    .play-circle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,.9); display: flex;
+      align-items: center; justify-content: center;
+    }
+    .album-body { padding: 10px 12px 12px; }
+    .album-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .album-artist { font-size: 11px; color: var(--text-2); }
+
+    /* Детальный вид */
+    .album-detail { display: none; }
+    .detail-header {
+      display: flex; gap: 28px; align-items: flex-end; margin-bottom: 32px;
+    }
+    .detail-cover {
+      width: 160px; height: 160px; border-radius: 14px;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .detail-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .detail-cover-div { width: 100%; height: 100%; }
+    .detail-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .detail-title { font-family: 'DM Serif Display', serif; font-size: 26px; letter-spacing: -.5px; margin-bottom: 4px; }
+    .detail-artist { font-size: 14px; color: var(--accent); margin-bottom: 4px; font-weight: 500; }
+    .detail-info { font-size: 12px; color: var(--text-3); margin-bottom: 18px; }
+    .detail-play {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--text); color: #fff; border: none;
+      border-radius: 20px; padding: 10px 22px; font-size: 13px;
+      font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: opacity .15s;
+    }
+    .detail-play:hover { opacity: .85; }
+
+    .back-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 0.5px solid var(--border-mid); background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-2); transition: background .15s;
+      margin-bottom: 20px;
+    }
+    .back-btn:hover { background: var(--surface2); }
+
+    .track-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 10px; border-radius: 10px; cursor: pointer;
+      transition: background .12s;
+    }
+    .track-row:hover { background: var(--surface); }
+    .track-row.playing { background: var(--surface); }
+    .track-num-cell { width: 24px; font-size: 12px; color: var(--text-3); text-align: center; flex-shrink: 0; }
+    .track-info-cell { flex: 1; min-width: 0; }
+    .track-name-cell2 { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-name-cell2.now { color: var(--accent); }
+    .track-dur-cell { font-size: 12px; color: var(--text-3); flex-shrink: 0; }
+
+    .load-more {
+      width: 100%; padding: 12px; background: var(--surface);
+      border: 0.5px solid var(--border-mid); border-radius: 10px;
+      font-size: 13px; color: var(--text-2); cursor: pointer;
+      transition: background .15s; margin-top: 20px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .load-more:hover { background: var(--surface2); }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">Альбомы</div>
+    </div>
+
+    <!-- Список альбомов -->
+    <div id="albumsView">
+      <div class="albums-grid" id="albumsGrid">
+        ${Array(8).fill(`
+          <div class="album-card">
+            <div class="album-thumb skeleton" style="aspect-ratio:1"></div>
+            <div class="album-body">
+              <div class="skeleton" style="height:13px;width:75%;margin-bottom:6px;border-radius:4px"></div>
+              <div class="skeleton" style="height:11px;width:55%;border-radius:4px"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <button class="load-more" id="loadMoreBtn">Загрузить ещё</button>
+    </div>
+
+    <!-- Детальный вид альбома -->
+    <div class="album-detail" id="albumDetail"></div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="shared.js"></script>
+<script>
+const GRADIENTS = [
+  'linear-gradient(145deg,#CECBF6,#7F77DD,#3C3489)',
+  'linear-gradient(145deg,#9FE1CB,#1D9E75,#085041)',
+  'linear-gradient(145deg,#F5C4B3,#D85A30,#4A1B0C)',
+  'linear-gradient(145deg,#FAC775,#BA7517,#412402)',
+  'linear-gradient(145deg,#F5C0D4,#D4537E,#4A1020)',
+  'linear-gradient(145deg,#C5E8AF,#639922,#1E3A08)',
+];
+
+const fmt = (s) => s ? `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}` : '—';
+
+let offset = 0;
+let allAlbums = [];
+
+async function loadAlbums() {
+  try {
+    const data = await API.albums.list(16, offset);
+    const albums = data.albums || [];
+
+    // Если мало в БД — добираем из Jamendo
+    let extra = [];
+    if (albums.length < 8) {
+      const jam = await API.jamendo.tracks({ limit: 20, audioformat: 'mp32', imagesize: '200' });
+      const seen = new Set();
+      (jam.tracks || []).forEach(t => {
+        if (!seen.has(t.album_id)) {
+          seen.add(t.album_id);
+          extra.push({ album_id: null, title: t.album_name, artist_name: t.artist_name, cover_url: t.image, jamendo_artist_id: t.artist_id, jamendo_album_id: t.album_id });
+        }
+      });
+    }
+
+    allAlbums = [...allAlbums, ...albums, ...extra];
+    renderAlbums();
+    offset += albums.length;
+  } catch (e) {
+    showToast('Ошибка загрузки: ' + e.message);
+  }
+}
+
+function renderAlbums() {
+  document.getElementById('albumsGrid').innerHTML = allAlbums.map((a, i) => `
+    <div class="album-card" onclick="openAlbum(${i})">
+      <div class="album-thumb">
+        ${a.cover_url
+          ? `<img src="${a.cover_url}" alt="">`
+          : `<div class="album-thumb-div" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
+        <div class="album-overlay">
+          <div class="play-circle">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="#333"><path d="M4 3l10 5-10 5V3z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="album-body">
+        <div class="album-name">${a.title}</div>
+        <div class="album-artist">${a.artist_name || '—'}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function openAlbum(idx) {
+  const album = allAlbums[idx];
+  const detail = document.getElementById('albumDetail');
+  const view   = document.getElementById('albumsView');
+
+  view.style.display   = 'none';
+  detail.style.display = 'block';
+
+  detail.innerHTML = `
+    <div class="back-btn" onclick="closeDetail()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M10 3L5 8l5 5"/>
+      </svg>
+    </div>
+    <div class="detail-header">
+      <div class="detail-cover">
+        ${album.cover_url
+          ? `<img src="${album.cover_url}" alt="">`
+          : `<div class="detail-cover-div" style="background:${GRADIENTS[idx%GRADIENTS.length]}"></div>`}
+      </div>
+      <div>
+        <div class="detail-label">Альбом</div>
+        <div class="detail-title">${album.title}</div>
+        <div class="detail-artist">${album.artist_name || '—'}</div>
+        <div class="detail-info" id="detailInfo">Загрузка треков...</div>
+        <button class="detail-play" id="detailPlayBtn" disabled>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5V3z"/></svg>
+          Слушать альбом
+        </button>
+      </div>
+    </div>
+    <div class="track-list" id="detailTracks">
+      <div class="skeleton" style="height:250px;border-radius:12px"></div>
+    </div>`;
+
+  // Загружаем треки
+  try {
+    let tracks = [];
+    if (album.album_id) {
+      const data = await API.albums.tracks(album.album_id);
+      tracks = data.tracks || [];
+    } else if (album.jamendo_album_id) {
+      // Ищем треки через Jamendo по album_id
+      const data = await API.jamendo.tracks({ album_id: album.jamendo_album_id, limit: 50, audioformat: 'mp32' });
+      tracks = (data.tracks || []).map(t => ({
+        track_id: null, title: t.name, track_title: t.name,
+        artist_name: t.artist_name, duration: t.duration,
+        audio_url: t.audio, cover_url: t.image,
+      }));
+    }
+
+    document.getElementById('detailInfo').textContent =
+      `${tracks.length} треков${album.release_date ? ' · ' + new Date(album.release_date).getFullYear() : ''}`;
+
+    if (!tracks.length) {
+      document.getElementById('detailTracks').innerHTML = '<div class="empty-state"><p>Треки не найдены</p></div>';
+      return;
+    }
+
+    let nowIdx = -1;
+    document.getElementById('detailTracks').innerHTML = tracks.map((t, i) => `
+      <div class="track-row" id="trow${i}" onclick="playAlbum(${i})">
+        <span class="track-num-cell">${i+1}</span>
+        <div class="track-info-cell">
+          <div class="track-name-cell2" id="tname${i}">${t.title || t.track_title}</div>
+          <div style="font-size:11px;color:var(--text-2)">${t.artist_name || '—'}</div>
+        </div>
+        <span class="track-dur-cell">${fmt(t.duration)}</span>
+      </div>`).join('');
+
+    window._albumTracks = tracks;
+    const playBtn = document.getElementById('detailPlayBtn');
+    playBtn.disabled = false;
+    playBtn.onclick  = () => Player.setQueue(tracks, 0);
+
+  } catch (e) {
+    document.getElementById('detailTracks').innerHTML = `<div class="empty-state"><p>Ошибка: ${e.message}</p></div>`;
+  }
+}
+
+function closeDetail() {
+  document.getElementById('albumDetail').style.display = 'none';
+  document.getElementById('albumsView').style.display  = 'block';
+}
+
+function playAlbum(idx) {
+  const tracks = window._albumTracks || [];
+  if (!tracks[idx]) return;
+  Player.setQueue(tracks, idx);
+  // Подсветка текущего
+  document.querySelectorAll('.track-row').forEach((r, i) => {
+    r.classList.toggle('playing', i === idx);
+    const n = document.getElementById(`tname${i}`);
+    if (n) n.classList.toggle('now', i === idx);
+  });
+}
+
+document.getElementById('loadMoreBtn').addEventListener('click', loadAlbums);
+
+loadAlbums();
+</script>
+</body>
+</html>

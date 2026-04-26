@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave — Избранное</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .history-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .clear-btn {
+      font-size: 12px; color: var(--text-3); cursor: pointer;
+      background: none; border: none; font-family: inherit;
+      transition: color .15s;
+    }
+    .clear-btn:hover { color: var(--coral); }
+
+    .history-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer;
+      transition: background .12s; position: relative;
+    }
+    .history-row:hover { background: var(--surface); }
+    .history-thumb {
+      width: 44px; height: 44px; border-radius: 8px;
+      flex-shrink: 0; object-fit: cover;
+    }
+    .history-thumb-div { width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0; }
+    .history-info { flex: 1; min-width: 0; }
+    .history-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-artist { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+    .history-time { font-size: 11px; color: var(--text-3); flex-shrink: 0; }
+    .history-play {
+      width: 30px; height: 30px; border-radius: 50%; border: none;
+      background: var(--accent-light); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .15s; flex-shrink: 0;
+    }
+    .history-row:hover .history-play { opacity: 1; }
+
+    .date-divider {
+      font-size: 11px; color: var(--text-3); font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 16px 12px 8px; border-top: 0.5px solid var(--border);
+      margin-top: 8px;
+    }
+    .date-divider:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+    .login-prompt {
+      text-align: center; padding: 80px 20px;
+    }
+    .login-prompt p { font-size: 14px; color: var(--text-2); margin-bottom: 16px; }
+    .login-prompt a {
+      display: inline-block; padding: 10px 24px;
+      background: var(--text); color: #fff; border-radius: 10px;
+      font-size: 13px; font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">Избранное</div>
+    </div>
+
+    <div id="content"></div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="shared.js"></script>
+<script>
+const GRADIENTS = [
+  'linear-gradient(135deg,#CECBF6,#7F77DD)',
+  'linear-gradient(135deg,#9FE1CB,#1D9E75)',
+  'linear-gradient(135deg,#F5C4B3,#D85A30)',
+  'linear-gradient(135deg,#FAC775,#BA7517)',
+  'linear-gradient(135deg,#F5C0D4,#D4537E)',
+  'linear-gradient(135deg,#C5E8AF,#639922)',
+];
+
+function timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)   return 'только что';
+  if (mins < 60)  return `${mins} мин назад`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)   return `${hrs} ч назад`;
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+
+function dateKey(dateStr) {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString())     return 'Сегодня';
+  if (d.toDateString() === yesterday.toDateString()) return 'Вчера';
+  return d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+async function load() {
+  const content = document.getElementById('content');
+
+  if (!API.isLoggedIn()) {
+    content.innerHTML = `
+      <div class="login-prompt">
+        <p>Войдите, чтобы открыть плейлист Избранное</p>
+        <a href="login.html">Войти</a>
+      </div>`;
+    return;
+  }
+
+  content.innerHTML = '<div class="skeleton" style="height:300px;border-radius:12px"></div>';
+
+  try {
+    const playlistsData = await API.user.playlists();
+    const playlists = playlistsData.playlists || [];
+    let favorites = playlists.find((item) => item.playlist_name === 'Избранное');
+
+    if (!favorites) {
+      await API.user.createPlaylist('Избранное');
+      const refreshed = await API.user.playlists();
+      favorites = (refreshed.playlists || []).find((item) => item.playlist_name === 'Избранное');
+    }
+
+    const tracksData = favorites ? await API.user.playlistTracks(favorites.playlist_id) : { tracks: [] };
+    const history = tracksData.tracks || [];
+
+    if (!history.length) {
+      content.innerHTML = `
+        <div class="empty-state">
+          <svg width="40" height="40" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M8 13.5S1.5 9.5 1.5 5.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 14.5 5.5c0 4-6.5 8-6.5 8z"/>
+          </svg>
+          <p>Избранное пока пусто</p>
+        </div>`;
+      return;
+    }
+
+    let html = `
+      <div class="history-header">
+        <div class="section-title">Плейлист Избранное</div>
+      </div>`;
+
+    history.forEach((item, i) => {
+      html += `
+        <div class="history-row" onclick="playTrack(${i})">
+          ${item.cover_url
+            ? `<img class="history-thumb" src="${item.cover_url}" alt="">`
+            : `<div class="history-thumb-div" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
+          <div class="history-info">
+            <div class="history-name">${item.track_title}</div>
+            <div class="history-artist">${item.artist_name || '—'}</div>
+          </div>
+          <button class="icon-btn" onclick="removeFavorite(${favorites.playlist_id}, ${item.track_id}, event)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M8 13.5S1.5 9.5 1.5 5.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 14.5 5.5c0 4-6.5 8-6.5 8z"/>
+            </svg>
+          </button>
+          <button class="history-play">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5V3z"/></svg>
+          </button>
+        </div>`;
+    });
+
+    content.innerHTML = html;
+    window._historyTracks = history;
+
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><p>Ошибка загрузки: ${e.message}</p></div>`;
+  }
+}
+
+function playTrack(idx) {
+  const tracks = window._historyTracks || [];
+  if (tracks[idx]) Player.setQueue(tracks, idx);
+}
+
+async function removeFavorite(playlistId, trackId, event) {
+  event.stopPropagation();
+  try {
+    await API.user.removeTrack(playlistId, trackId);
+    showToast('Удалено из Избранного');
+    load();
+  } catch (error) {
+    showToast(error.message || 'Не удалось удалить трек');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
