@@ -1,4 +1,4 @@
-# 🎵 Wave — Music Streaming Service
+# Wave — Music Streaming Service
 
 Стриминговый сервис для прослушивания музыки. Использует Jamendo API для получения треков.
 
