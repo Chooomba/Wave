@@ -1,4 +1,4 @@
-# 🎵 Wave — Music Streaming Service
+# Wave — Music Streaming Service
 
 Стриминговый сервис для прослушивания музыки. Использует Jamendo API для получения треков.
 
@@ -61,24 +61,8 @@ cd wave
 ```
 
 ### 2. Настроить базу данных
-
 ```bash
-# Создать БД
-psql -U postgres -c "CREATE DATABASE wave_db;"
-
-# Применить базовую схему
-psql -U postgres -d wave_db -f database/table.sql
-
-# Применить новые таблицы и объекты
-psql -U postgres -d wave_db -f database/01_add_artist_album.sql
-psql -U postgres -d wave_db -f database/02_views.sql
-psql -U postgres -d wave_db -f database/03_functions.sql
-psql -U postgres -d wave_db -f database/04_triggers.sql
-psql -U postgres -d wave_db -f database/05_roles.sql
-
-# Опционально: загрузить тестовые данные до Jamendo sync
-psql -U postgres -d wave_db -f database/test_data.sql
-```
+зайти на бд 
 
 ### 3. Настроить backend
 
@@ -94,7 +78,7 @@ npm install
 Отредактировать `.env`:
 
 ```env
-DB_HOST=localhost
+DB_HOST=localhost(взять из бд хост)
 DB_PORT=5432
 DB_NAME=wave_db
 DB_USER=wave_api
@@ -121,8 +105,7 @@ npm run dev
 ### 5. Загрузить музыку из Jamendo в БД
 
 ```bash
-# Синхронизировать 50 треков
-curl -X POST http://localhost:3000/api/jamendo/sync?limit=50
+
 
 # Или открыть в браузере после входа
 # http://localhost:3000
