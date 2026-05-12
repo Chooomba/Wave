@@ -221,7 +221,7 @@ function renderTracks(tracks, q) {
     <div class="results-count">${tracks.length} результатов</div>
     <div class="results-tracks">
       ${tracks.map((t, i) => `
-        <div class="result-row" onclick="playTrack(${i})">
+        <div class="result-row" onclick="playTrack(${i})" onmouseenter="preloadSearchTrack(${i})">
           ${t.cover_url
             ? `<img class="result-thumb" src="${t.cover_url}" alt="">`
             : `<div class="result-thumb-div" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
@@ -290,6 +290,12 @@ function playTrack(idx) {
   const tracks = window._searchTracks || [];
   if (!tracks[idx]) return;
   Player.setQueue(tracks, idx);
+}
+
+function preloadSearchTrack(idx) {
+  const tracks = window._searchTracks || [];
+  if (!tracks[idx]) return;
+  Player.preload(tracks[idx]);
 }
 </script>
 </body>

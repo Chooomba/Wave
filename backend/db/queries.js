@@ -1,9 +1,9 @@
-// db/queries.js — все запросы ТОЛЬКО через функции и представления PostgreSQL
+﻿// db/queries.js вЂ” РІСЃРµ Р·Р°РїСЂРѕСЃС‹ РўРћР›Р¬РљРћ С‡РµСЂРµР· С„СѓРЅРєС†РёРё Рё РїСЂРµРґСЃС‚Р°РІР»РµРЅРёСЏ PostgreSQL
 const pool = require('./pool');
 
-// ── ТРЕКИ ────────────────────────────────────────────────────
+// в”Ђв”Ђ РўР Р•РљР в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
-// Получить треки через view (с пагинацией)
+// РџРѕР»СѓС‡РёС‚СЊ С‚СЂРµРєРё С‡РµСЂРµР· view (СЃ РїР°РіРёРЅР°С†РёРµР№)
 const getTracks = async (limit = 20, offset = 0) => {
   const { rows } = await pool.query(
     `SELECT * FROM v_track_full LIMIT $1 OFFSET $2`,
@@ -12,7 +12,7 @@ const getTracks = async (limit = 20, offset = 0) => {
   return rows;
 };
 
-// Поиск через функцию
+// РџРѕРёСЃРє С‡РµСЂРµР· С„СѓРЅРєС†РёСЋ
 const searchTracks = async (query, limit = 30) => {
   const { rows } = await pool.query(
     `SELECT * FROM fn_search_tracks($1, $2)`,
@@ -21,7 +21,7 @@ const searchTracks = async (query, limit = 30) => {
   return rows;
 };
 
-// Один трек через view
+// РћРґРёРЅ С‚СЂРµРє С‡РµСЂРµР· view
 const getTrackById = async (trackId) => {
   const { rows } = await pool.query(
     `SELECT * FROM v_track_full WHERE track_id = $1`,
@@ -30,7 +30,7 @@ const getTrackById = async (trackId) => {
   return rows[0] || null;
 };
 
-// ── АЛЬБОМЫ ──────────────────────────────────────────────────
+// в”Ђв”Ђ РђР›Р¬Р‘РћРњР« в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const getAlbums = async (limit = 20, offset = 0) => {
   const { rows } = await pool.query(
@@ -56,7 +56,7 @@ const getAlbumTracks = async (albumId) => {
   return rows;
 };
 
-// ── ИСПОЛНИТЕЛИ ───────────────────────────────────────────────
+// в”Ђв”Ђ РРЎРџРћР›РќРРўР•Р›Р в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const getArtists = async (limit = 20, offset = 0) => {
   const { rows } = await pool.query(
@@ -74,7 +74,7 @@ const getArtistById = async (artistId) => {
   return rows[0] || null;
 };
 
-// ── ИСТОРИЯ ───────────────────────────────────────────────────
+// в”Ђв”Ђ РРЎРўРћР РРЇ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const addToHistory = async (userId, trackId) => {
   await pool.query(
@@ -91,7 +91,7 @@ const getUserHistory = async (userId, limit = 50) => {
   return rows;
 };
 
-// ── РЕКОМЕНДАЦИИ ──────────────────────────────────────────────
+// в”Ђв”Ђ Р Р•РљРћРњР•РќР”РђР¦РР в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const getRecommendations = async (userId, limit = 20) => {
   const { rows } = await pool.query(
@@ -101,24 +101,38 @@ const getRecommendations = async (userId, limit = 20) => {
   return rows;
 };
 
-// ── ПЛЕЙЛИСТЫ ─────────────────────────────────────────────────
+// в”Ђв”Ђ РџР›Р•Р™Р›РРЎРўР« в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const getUserPlaylists = async (userId) => {
   const { rows } = await pool.query(
-    `SELECT DISTINCT playlist_id, playlist_name, playlist_owner
-     FROM v_playlist_tracks
-     WHERE playlist_owner = $1`,
+    `SELECT
+        p.playlist_id,
+        p.name AS playlist_name,
+        p.user_id AS playlist_owner
+     FROM playlist p
+     WHERE p.user_id = $1
+     ORDER BY p.created_at DESC, p.playlist_id DESC`,
     [userId]
   );
   return rows;
 };
 
 const getPlaylistTracks = async (playlistId, userId) => {
-  // Проверяем что плейлист принадлежит пользователю или хотим публичный
+  const ownerCheck = await pool.query(
+    `SELECT 1
+     FROM playlist
+     WHERE playlist_id = $1 AND user_id = $2`,
+    [playlistId, userId]
+  );
+
+  if (!ownerCheck.rowCount) {
+    throw new Error('Access denied');
+  }
+
   const { rows } = await pool.query(
     `SELECT * FROM v_playlist_tracks
-     WHERE playlist_id = $1 AND playlist_owner = $2`,
-    [playlistId, userId]
+     WHERE playlist_id = $1`,
+    [playlistId]
   );
   return rows;
 };
@@ -174,7 +188,7 @@ const importJamendoTrack = async (track) => {
   });
 };
 
-// ── ПОЛЬЗОВАТЕЛИ ──────────────────────────────────────────────
+// в”Ђв”Ђ РџРћР›Р¬Р—РћР’РђРўР•Р›Р в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const getUserByEmail = async (email) => {
   const { rows } = await pool.query(
@@ -201,7 +215,7 @@ const createUser = async (username, email, hashedPassword) => {
   return rows[0];
 };
 
-// ── JAMENDO: сохранить треки из API в БД ──────────────────────
+// в”Ђв”Ђ JAMENDO: СЃРѕС…СЂР°РЅРёС‚СЊ С‚СЂРµРєРё РёР· API РІ Р‘Р” в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 const upsertArtist = async (jamendoId, name, imageUrl) => {
   const { rows } = await pool.query(
@@ -253,3 +267,4 @@ module.exports = {
   getUserByEmail, getUserById, createUser,
   upsertArtist, upsertAlbum, upsertTrack,
 };
+

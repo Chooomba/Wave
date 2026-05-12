@@ -19,6 +19,7 @@ app.use('/api/tracks',  require('./routes/tracks'));
 app.use('/api/albums',  require('./routes/albums'));
 app.use('/api/artists', require('./routes/artists'));
 app.use('/api/user',    require('./routes/user'));
+app.use('/api/admin',   require('./routes/admin'));
 app.use('/api/jamendo', require('./routes/jamendo'));
 
 // ── HEALTH CHECK ──────────────────────────────────────────────

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wave — Плейлисты</title>
+  <title>Wave - Плейлисты</title>
   <link rel="stylesheet" href="shared.css"/>
   <style>
     .playlists-grid {
@@ -35,7 +35,6 @@
     .new-playlist-card:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
     .new-playlist-card span { font-size: 13px; font-weight: 500; }
 
-    /* Детальный вид плейлиста */
     .playlist-detail { display: none; }
     .detail-header {
       display: flex; gap: 24px; align-items: flex-end; margin-bottom: 32px;
@@ -66,7 +65,6 @@
     }
     .back-btn:hover { background: var(--surface2); }
 
-    /* Модалка создания плейлиста */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,.4);
       display: flex; align-items: center; justify-content: center;
@@ -120,13 +118,10 @@
     </div>
 
     <div id="content"></div>
-
-    <!-- Детальный вид -->
     <div class="playlist-detail" id="playlistDetail"></div>
   </main>
 </div>
 
-<!-- Модалка -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-title">Новый плейлист</div>
@@ -188,9 +183,9 @@ function renderPlaylists() {
   content.innerHTML = `
     <div class="playlists-grid">
       ${playlists.map((p, i) => `
-        <div class="playlist-card" onclick="openPlaylist(${p.playlist_id}, '${p.playlist_name}', ${i})">
-          <div class="playlist-cover" style="background:${COVER_BG[i%COVER_BG.length]}">
-            ${COVERS[i%COVERS.length]}
+        <div class="playlist-card" onclick='openPlaylist(${p.playlist_id}, ${JSON.stringify(p.playlist_name)}, ${i})'>
+          <div class="playlist-cover" style="background:${COVER_BG[i % COVER_BG.length]}">
+            ${COVERS[i % COVERS.length]}
           </div>
           <div class="playlist-body">
             <div class="playlist-name">${p.playlist_name}</div>
@@ -210,7 +205,7 @@ async function openPlaylist(id, name, idx) {
   const detail = document.getElementById('playlistDetail');
   const content = document.getElementById('content');
   content.style.display = 'none';
-  detail.style.display  = 'block';
+  detail.style.display = 'block';
   detail.innerHTML = `
     <div class="back-btn" onclick="closeDetail()">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -218,7 +213,7 @@ async function openPlaylist(id, name, idx) {
       </svg>
     </div>
     <div class="detail-header">
-      <div class="detail-cover" style="background:${COVER_BG[idx%COVER_BG.length]}">${COVERS[idx%COVERS.length]}</div>
+      <div class="detail-cover" style="background:${COVER_BG[idx % COVER_BG.length]}">${COVERS[idx % COVERS.length]}</div>
       <div class="detail-meta">
         <div class="detail-label">Плейлист</div>
         <div class="detail-title">${name}</div>
@@ -244,13 +239,13 @@ async function openPlaylist(id, name, idx) {
     }
 
     document.getElementById('detailTracks').innerHTML = tracks.map((t, i) => `
-      <div class="playlist-track-row" onclick="playPlaylist(${i})">
+      <div class="playlist-track-row" onclick="playPlaylist(${i})" onmouseenter="preloadPlaylistTrack(${i})">
         ${t.cover_url
           ? `<img class="pt-thumb" src="${t.cover_url}" alt="">`
-          : `<div class="pt-thumb-div" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
+          : `<div class="pt-thumb-div" style="background:${GRADIENTS[i % GRADIENTS.length]}"></div>`}
         <div class="pt-info">
           <div class="pt-name">${t.track_title}</div>
-          <div class="pt-artist">${t.artist_name || '—'}</div>
+          <div class="pt-artist">${t.artist_name || '-'}</div>
         </div>
       </div>`).join('');
 
@@ -271,7 +266,12 @@ function playPlaylist(idx) {
   if (tracks[idx]) Player.setQueue(tracks, idx);
 }
 
-// Модалка
+function preloadPlaylistTrack(idx) {
+  const tracks = window._playlistTracks || [];
+  if (!tracks[idx]) return;
+  Player.preload(tracks[idx]);
+}
+
 function showModal() {
   document.getElementById('modalOverlay').classList.add('show');
   document.getElementById('playlistNameInput').focus();
@@ -292,7 +292,9 @@ document.getElementById('modalCreate').addEventListener('click', async () => {
     hideModal();
     showToast('Плейлист создан');
     load();
-  } catch (e) { showToast('Ошибка: ' + e.message); }
+  } catch (e) {
+    showToast('Ошибка: ' + e.message);
+  }
 });
 document.getElementById('playlistNameInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('modalCreate').click();

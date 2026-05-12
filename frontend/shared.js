@@ -5,6 +5,7 @@ const PAGES = {
   'favorites.html': 'Избранное',
   'playlists.html': 'Плейлисты',
   'albums.html': 'Альбомы',
+  'admin.html': 'Админ',
 };
 
 const NAV_ICONS = {
@@ -14,13 +15,21 @@ const NAV_ICONS = {
   'favorites.html': `<svg viewBox="0 0 16 16" fill="none"><path d="M8 13.5S1.5 9.5 1.5 5.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 14.5 5.5c0 4-6.5 8-6.5 8z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
   'playlists.html': `<svg viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="12" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="11.5" cy="11" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 12V4l6-1v7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   'albums.html': `<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>`,
+  'admin.html': `<svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5l1.5 1 .2 1.7 1.6.7 1.6-.3.9 1.6-.9 1.4.4 1.7-1.2 1.2-1.7-.4-1.4.9-1.6-.9-1.7.4-1.2-1.2.4-1.7-.9-1.4.9-1.6 1.6.3 1.6-.7.2-1.7L8 2.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.8" stroke="currentColor" stroke-width="1.1"/></svg>`,
 };
+
+const FAVORITES_NAME = 'Избранное';
+const FAVORITES_ALIASES = new Set([
+  FAVORITES_NAME,
+  'РР·Р±СЂР°РЅРЅРѕРµ',
+]);
 
 function buildSidebar() {
   const current = window.location.pathname.split('/').pop() || 'index.html';
   const mainPages = ['index.html', 'search.html', 'browse.html'];
-  const libPages = ['favorites.html', 'playlists.html', 'albums.html'];
   const user = API.getUser();
+  const libPages = ['favorites.html', 'playlists.html', 'albums.html'];
+  if (user) libPages.push('admin.html');
 
   const navItem = (page) => `
     <a href="${page}" class="nav-item ${page === current ? 'active' : ''}">
@@ -120,17 +129,20 @@ function buildPlayer() {
 
 const Player = (() => {
   const audio = new Audio();
+  const preloadAudio = new Audio();
   let queue = [];
   let idx = 0;
   let shuffle = false;
   let repeat = false;
   let volume = 0.7;
+  let preloadedSrc = '';
 
   audio.preload = 'auto';
   audio.volume = volume;
+  preloadAudio.preload = 'auto';
 
-  const fmt = (s) => {
-    const sec = Math.floor(s) || 0;
+  const fmt = (seconds) => {
+    const sec = Math.floor(seconds) || 0;
     return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
   };
 
@@ -147,38 +159,58 @@ const Player = (() => {
 
   const updateUI = (track) => {
     if (!track) return;
-    const n = ui.name();
-    if (n) n.textContent = track.track_title || track.title || '—';
-    const a = ui.artist();
-    if (a) a.textContent = track.artist_name || '—';
-    const art = ui.art();
-    if (art) {
-      const cover = track.cover_url || track.album_cover;
-      art.innerHTML = cover
+    const title = track.track_title || track.title || '—';
+    const artist = track.artist_name || '—';
+    const cover = track.cover_url || track.album_cover || null;
+
+    if (ui.name()) ui.name().textContent = title;
+    if (ui.artist()) ui.artist().textContent = artist;
+    if (ui.art()) {
+      ui.art().innerHTML = cover
         ? `<img src="${cover}" alt="cover">`
         : `<div class="player-art-inner"></div>`;
     }
-    document.title = `${track.track_title || track.title} — Wave`;
+
+    document.title = `${title} — Wave`;
   };
 
   const setPlayIcon = (playing) => {
-    const ic = ui.icon();
-    if (!ic) return;
-    ic.innerHTML = playing
+    const icon = ui.icon();
+    if (!icon) return;
+    icon.innerHTML = playing
       ? `<rect x="4" y="3" width="3" height="10" rx="1"/><rect x="9" y="3" width="3" height="10" rx="1"/>`
       : `<path d="M4 3l10 5-10 5V3z"/>`;
   };
 
+  const nextTrackForPreload = () => {
+    if (shuffle || !queue.length || idx >= queue.length - 1) return null;
+    return queue[idx + 1] || null;
+  };
+
+  const warmTrack = (track) => {
+    if (!track || !track.audio_url) return;
+    if (preloadedSrc === track.audio_url) return;
+    if (audio.src && audio.src.includes(track.audio_url)) return;
+    preloadAudio.pause();
+    preloadAudio.src = track.audio_url;
+    preloadAudio.load();
+    preloadedSrc = track.audio_url;
+  };
+
   const load = (track) => {
     if (!track || !track.audio_url) {
-      showToast('Нет аудио для этого трека');
+      showToast('У этого трека нет аудио');
       return;
     }
+
     updateUI(track);
     audio.pause();
     audio.src = track.audio_url;
     audio.load();
-    audio.play().catch(() => showToast('Не удалось воспроизвести'));
+    audio.play().catch(() => showToast('Не удалось воспроизвести трек'));
+    preloadedSrc = '';
+    warmTrack(nextTrackForPreload());
+
     if (API.isLoggedIn() && track.track_id) {
       API.tracks.play(track.track_id).catch(() => {});
     }
@@ -187,21 +219,21 @@ const Player = (() => {
   audio.addEventListener('play', () => setPlayIcon(true));
   audio.addEventListener('pause', () => setPlayIcon(false));
   audio.addEventListener('timeupdate', () => {
-    const cur = ui.cur();
-    const dur = ui.dur();
-    const fill = ui.fill();
-    if (cur) cur.textContent = fmt(audio.currentTime);
-    if (dur) dur.textContent = fmt(audio.duration);
-    if (fill) {
-      fill.style.width = audio.duration
+    if (ui.cur()) ui.cur().textContent = fmt(audio.currentTime);
+    if (ui.dur()) ui.dur().textContent = fmt(audio.duration);
+    if (ui.fill()) {
+      ui.fill().style.width = audio.duration
         ? `${(audio.currentTime / audio.duration) * 100}%`
         : '0%';
+    }
+    if (audio.duration && audio.currentTime >= Math.max(audio.duration - 12, audio.duration * 0.65)) {
+      warmTrack(nextTrackForPreload());
     }
   });
   audio.addEventListener('ended', () => {
     if (repeat) {
       audio.currentTime = 0;
-      audio.play();
+      audio.play().catch(() => {});
       return;
     }
     Player.next();
@@ -210,9 +242,9 @@ const Player = (() => {
 
   return {
     setQueue(tracks, startIdx = 0) {
-      queue = tracks;
+      queue = Array.isArray(tracks) ? tracks : [];
       idx = startIdx;
-      load(queue[idx]);
+      if (queue[idx]) load(queue[idx]);
     },
     play(track) {
       queue = [track];
@@ -220,7 +252,8 @@ const Player = (() => {
       load(track);
     },
     togglePlay() {
-      audio.paused ? audio.play() : audio.pause();
+      if (!audio.src) return;
+      audio.paused ? audio.play().catch(() => {}) : audio.pause();
     },
     next() {
       if (!queue.length) return;
@@ -238,14 +271,13 @@ const Player = (() => {
       idx = (idx - 1 + queue.length) % queue.length;
       load(queue[idx]);
     },
-    seek(pct) {
-      if (audio.duration) audio.currentTime = audio.duration * pct;
+    seek(percent) {
+      if (audio.duration) audio.currentTime = audio.duration * percent;
     },
-    setVolume(pct) {
-      volume = pct;
-      audio.volume = pct;
-      const vf = ui.volFill();
-      if (vf) vf.style.width = `${pct * 100}%`;
+    setVolume(percent) {
+      volume = percent;
+      audio.volume = percent;
+      if (ui.volFill()) ui.volFill().style.width = `${percent * 100}%`;
     },
     toggleShuffle() {
       shuffle = !shuffle;
@@ -255,29 +287,37 @@ const Player = (() => {
       repeat = !repeat;
       document.getElementById('btnRepeat')?.classList.toggle('active', repeat);
     },
-    current: () => queue[idx] || null,
+    preload(track) {
+      warmTrack(track);
+    },
+    current() {
+      return queue[idx] || null;
+    },
   };
 })();
 
 window.Player = Player;
 
-function showToast(msg, duration = 3000) {
+function showToast(message, duration = 3000) {
   let wrap = document.querySelector('.toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');
     wrap.className = 'toast-wrap';
     document.body.appendChild(wrap);
   }
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  wrap.appendChild(t);
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  wrap.appendChild(toast);
+
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => t.classList.add('show'));
+    requestAnimationFrame(() => toast.classList.add('show'));
   });
+
   setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.remove(), 300);
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
   }, duration);
 }
 
@@ -285,23 +325,37 @@ window.showToast = showToast;
 
 let favoritesPlaylistIdPromise = null;
 
+function isFavoritesPlaylist(playlist) {
+  const name = String(playlist?.playlist_name || '').trim();
+  return FAVORITES_ALIASES.has(name) || /избран/i.test(name) || /РР·Р±/i.test(name);
+}
+
 async function getFavoritesPlaylistId() {
   if (!API.isLoggedIn()) return null;
+
   if (!favoritesPlaylistIdPromise) {
     favoritesPlaylistIdPromise = (async () => {
       let playlists = (await API.user.playlists()).playlists || [];
-      let favorites = playlists.find((p) => p.playlist_name === 'Избранное');
+      let favorites = playlists.find(isFavoritesPlaylist);
+
       if (!favorites) {
-        await API.user.createPlaylist('Избранное');
+        await API.user.createPlaylist(FAVORITES_NAME);
         playlists = (await API.user.playlists()).playlists || [];
-        favorites = playlists.find((p) => p.playlist_name === 'Избранное');
+        favorites = playlists.find(isFavoritesPlaylist);
       }
-      return favorites?.playlist_id || null;
+
+      const playlistId = favorites?.playlist_id || null;
+      if (!playlistId) {
+        favoritesPlaylistIdPromise = null;
+      }
+
+      return playlistId;
     })().catch((error) => {
       favoritesPlaylistIdPromise = null;
       throw error;
     });
   }
+
   return favoritesPlaylistIdPromise;
 }
 
@@ -320,9 +374,10 @@ async function addToFavorites(track, event) {
       showToast('Не удалось найти плейлист Избранное');
       return;
     }
+
     const payload = track?.track_id ? { track_id: track.track_id } : { track };
     const result = await API.user.addTrack(playlistId, payload);
-    showToast(result.added ? 'Добавлено в Избранное' : 'Уже есть в Избранном');
+    showToast(result.added ? 'Добавлено в Избранное' : 'Трек уже есть в Избранном');
   } catch (error) {
     showToast(error.message || 'Не удалось добавить трек');
   }
@@ -344,13 +399,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = document.getElementById('app');
   if (!app) return;
 
-  const sb = document.createElement('div');
-  sb.innerHTML = buildSidebar();
-  app.prepend(sb.firstElementChild);
+  const sidebarHost = document.createElement('div');
+  sidebarHost.innerHTML = buildSidebar();
+  app.prepend(sidebarHost.firstElementChild);
 
-  const pl = document.createElement('div');
-  pl.innerHTML = buildPlayer();
-  app.appendChild(pl.firstElementChild);
+  const playerHost = document.createElement('div');
+  playerHost.innerHTML = buildPlayer();
+  app.appendChild(playerHost.firstElementChild);
 
   document.getElementById('userRowBtn')?.addEventListener('click', () => {
     if (API.isLoggedIn()) {
@@ -366,14 +421,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnShuffle')?.addEventListener('click', () => Player.toggleShuffle());
   document.getElementById('btnRepeat')?.addEventListener('click', () => Player.toggleRepeat());
 
-  document.getElementById('progressTrack')?.addEventListener('click', (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    Player.seek((e.clientX - rect.left) / rect.width);
+  document.getElementById('progressTrack')?.addEventListener('click', (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    Player.seek((event.clientX - rect.left) / rect.width);
   });
 
-  document.getElementById('volTrack')?.addEventListener('click', (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    Player.setVolume((e.clientX - rect.left) / rect.width);
+  document.getElementById('volTrack')?.addEventListener('click', (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    Player.setVolume((event.clientX - rect.left) / rect.width);
   });
 
   Player.setVolume(0.7);

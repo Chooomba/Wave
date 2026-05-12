@@ -121,7 +121,7 @@ DECLARE
 BEGIN
     SELECT user_id INTO v_owner FROM playlist WHERE playlist_id = p_playlist_id;
 
-    IF v_owner <> p_user_id THEN
+    IF v_owner IS NULL OR v_owner <> p_user_id THEN
         RAISE EXCEPTION 'Access denied: playlist does not belong to this user';
     END IF;
 
@@ -149,7 +149,7 @@ DECLARE
 BEGIN
     SELECT user_id INTO v_owner FROM playlist WHERE playlist_id = p_playlist_id;
 
-    IF v_owner <> p_user_id THEN
+    IF v_owner IS NULL OR v_owner <> p_user_id THEN
         RAISE EXCEPTION 'Access denied';
     END IF;
 

@@ -71,7 +71,7 @@
     <div class="hero-banner fade-up" id="heroBanner">
       <div>
         <div class="hero-label">Рекомендация дня</div>
-        <div class="hero-title" id="heroTitle">Загрузка...</div>
+        <div class="hero-title" id="heroTitle">Начни день с музыки</div>
         <div class="hero-sub"  id="heroSub">—</div>
         <button class="hero-play" id="heroPlayBtn">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5V3z"/></svg>
@@ -229,14 +229,14 @@ const gradThumb = (i) =>
 // Время суток
 const h = new Date().getHours();
 document.getElementById('greeting').textContent =
-  h < 12 ? 'Доброе утро 👋' : h < 18 ? 'Добрый день 👋' : 'Добрый вечер 👋';
+  h < 12 ? 'Доброе утро ' : h < 18 ? 'Добрый день ' : 'Добрый вечер ';
 
 // Рендер недавних треков
 function renderRecent(tracks) {
   const g = document.getElementById('recentGrid');
   if (!tracks.length) { g.innerHTML = '<div class="empty-state"><p>История пуста</p></div>'; return; }
   g.innerHTML = tracks.slice(0,6).map((t, i) => `
-    <div class="recent-card" onclick="playTrack(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+    <div class="recent-card" onclick="playTrack(${JSON.stringify(t).replace(/"/g,'&quot;')})" onmouseenter="preloadTrackData(${JSON.stringify(t).replace(/"/g,'&quot;')})">
       ${t.cover_url
         ? `<img class="rc-thumb" src="${t.cover_url}" alt="">`
         : `<div class="rc-thumb" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
@@ -257,7 +257,7 @@ function renderRec(tracks) {
   const g = document.getElementById('recGrid');
   if (!tracks.length) { g.innerHTML = '<div class="empty-state"><p>Нет рекомендаций</p></div>'; return; }
   g.innerHTML = tracks.slice(0,4).map((t, i) => `
-    <div class="mix-card" onclick="playTrack(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+    <div class="mix-card" onclick="playTrack(${JSON.stringify(t).replace(/"/g,'&quot;')})" onmouseenter="preloadTrackData(${JSON.stringify(t).replace(/"/g,'&quot;')})">
       <div class="mix-thumb">
         ${t.cover_url
           ? `<img src="${t.cover_url}" alt="" style="width:100%;height:100%;object-fit:cover">`
@@ -308,6 +308,10 @@ function renderHero(track) {
 
 function playTrack(t) {
   Player.play(t);
+}
+
+function preloadTrackData(t) {
+  Player.preload(t);
 }
 
 function toJamendoTrack(t) {

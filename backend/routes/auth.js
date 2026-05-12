@@ -8,7 +8,7 @@ require('dotenv').config();
 const makeToken = (user) => jwt.sign(
   { user_id: user.user_id, username: user.username, email: user.email },
   process.env.JWT_SECRET,
-  { expiresIn: process.env.JWT_EXPIRES_IN }
+  { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
 );
 
 // POST /api/auth/register

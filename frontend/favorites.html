@@ -148,7 +148,7 @@ async function load() {
 
     history.forEach((item, i) => {
       html += `
-        <div class="history-row" onclick="playTrack(${i})">
+        <div class="history-row" onclick="playTrack(${i})" onmouseenter="preloadTrack(${i})">
           ${item.cover_url
             ? `<img class="history-thumb" src="${item.cover_url}" alt="">`
             : `<div class="history-thumb-div" style="background:${GRADIENTS[i%GRADIENTS.length]}"></div>`}
@@ -178,6 +178,12 @@ async function load() {
 function playTrack(idx) {
   const tracks = window._historyTracks || [];
   if (tracks[idx]) Player.setQueue(tracks, idx);
+}
+
+function preloadTrack(idx) {
+  const tracks = window._historyTracks || [];
+  if (!tracks[idx]) return;
+  Player.preload(tracks[idx]);
 }
 
 async function removeFavorite(playlistId, trackId, event) {

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wave — Обзор</title>
+  <title>Wave - Обзор</title>
   <link rel="stylesheet" href="shared.css"/>
   <style>
     .genres-grid {
@@ -89,7 +89,6 @@
       <div class="page-title">Обзор</div>
     </div>
 
-    <!-- Жанры -->
     <div id="genresView">
       <section>
         <div class="section-header">
@@ -101,13 +100,12 @@
       <section>
         <div class="section-header">
           <div class="section-title">Все треки</div>
-          <span class="see-all" id="loadMoreAll">Загрузить ещё</span>
+          <span class="see-all" id="loadMoreAll">Загрузить еще</span>
         </div>
         <div class="track-grid" id="allTracksGrid"></div>
       </section>
     </div>
 
-    <!-- Треки жанра -->
     <div id="genreView" style="display:none">
       <div class="tracks-header">
         <div class="back-btn" id="backBtn">
@@ -115,11 +113,11 @@
             <path d="M10 3L5 8l5 5"/>
           </svg>
         </div>
-        <div class="section-title" id="genreTitle">—</div>
+        <div class="section-title" id="genreTitle">-</div>
         <div class="genre-badge" id="genreBadge"></div>
       </div>
       <div class="track-grid" id="genreTracksGrid"></div>
-      <button class="load-more" id="loadMoreGenre">Загрузить ещё</button>
+      <button class="load-more" id="loadMoreGenre">Загрузить еще</button>
     </div>
   </main>
 </div>
@@ -128,15 +126,15 @@
 <script src="shared.js"></script>
 <script>
 const GENRES = [
-  { tag: 'ambient',      label: 'Ambient',      bg: 'linear-gradient(135deg,#CECBF6,#3C3489)', emoji: '🌊' },
-  { tag: 'electronic',   label: 'Electronic',   bg: 'linear-gradient(135deg,#9FE1CB,#085041)', emoji: '⚡' },
-  { tag: 'folk',         label: 'Folk',         bg: 'linear-gradient(135deg,#FAC775,#412402)', emoji: '🎸' },
-  { tag: 'jazz',         label: 'Jazz',         bg: 'linear-gradient(135deg,#F5C0D4,#4A1020)', emoji: '🎷' },
-  { tag: 'classical',    label: 'Классика',     bg: 'linear-gradient(135deg,#E8DFD0,#8B7355)', emoji: '🎻' },
-  { tag: 'pop',          label: 'Pop',          bg: 'linear-gradient(135deg,#FBEAF0,#D4537E)', emoji: '🎵' },
-  { tag: 'rock',         label: 'Rock',         bg: 'linear-gradient(135deg,#F5C4B3,#4A1B0C)', emoji: '🎤' },
-  { tag: 'soundtrack',   label: 'Саундтреки',   bg: 'linear-gradient(135deg,#C5E8AF,#1E3A08)', emoji: '🎬' },
-  { tag: 'lounge',       label: 'Lounge',       bg: 'linear-gradient(135deg,#D4E8F5,#2A5A7A)', emoji: '🍹' },
+  { tag: 'ambient',    label: 'Ambient',      bg: 'linear-gradient(135deg,#CECBF6,#3C3489)', emoji: '🌊' },
+  { tag: 'electronic', label: 'Electronic',   bg: 'linear-gradient(135deg,#9FE1CB,#085041)', emoji: '⚡' },
+  { tag: 'folk',       label: 'Folk',         bg: 'linear-gradient(135deg,#FAC775,#412402)', emoji: '🎸' },
+  { tag: 'jazz',       label: 'Jazz',         bg: 'linear-gradient(135deg,#F5C0D4,#4A1020)', emoji: '🎷' },
+  { tag: 'classical',  label: 'Классика',     bg: 'linear-gradient(135deg,#E8DFD0,#8B7355)', emoji: '🎻' },
+  { tag: 'pop',        label: 'Pop',          bg: 'linear-gradient(135deg,#FBEAF0,#D4537E)', emoji: '🎵' },
+  { tag: 'rock',       label: 'Rock',         bg: 'linear-gradient(135deg,#F5C4B3,#4A1B0C)', emoji: '🎤' },
+  { tag: 'soundtrack', label: 'Саундтреки',   bg: 'linear-gradient(135deg,#C5E8AF,#1E3A08)', emoji: '🎬' },
+  { tag: 'lounge',     label: 'Lounge',       bg: 'linear-gradient(135deg,#D4E8F5,#2A5A7A)', emoji: '🍹' },
 ];
 
 let allOffset = 0;
@@ -144,8 +142,6 @@ let genreOffset = 0;
 let currentGenre = null;
 let allTracks = [];
 let genreTracks = [];
-
-const fmt = (s) => s ? `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}` : '—';
 
 function toJamendoTrack(t) {
   return {
@@ -166,22 +162,20 @@ function toJamendoTrack(t) {
   };
 }
 
-// Рендер жанров
 document.getElementById('genresGrid').innerHTML = GENRES.map(g => `
-  <div class="genre-card" style="background:${g.bg}" onclick="openGenre('${g.tag}','${g.label}','${g.bg}')">
+  <div class="genre-card" style="background:${g.bg}" onclick='openGenre(${JSON.stringify(g.tag)}, ${JSON.stringify(g.label)}, ${JSON.stringify(g.bg)})'>
     <span class="genre-icon">${g.emoji}</span>
     <span class="genre-name">${g.label}</span>
   </div>`).join('');
 
-// Рендер трек-айтема
 const trackItem = (t, idx, list) => `
-  <div class="track-item" onclick="playFrom(${idx}, '${list}')">
+  <div class="track-item" onclick="playFrom(${idx}, '${list}')" onmouseenter="preloadFrom(${idx}, '${list}')">
     ${t.cover_url
       ? `<img class="track-item-thumb" src="${t.cover_url}" alt="">`
       : `<div class="track-item-thumb" style="background:linear-gradient(135deg,#CECBF6,#7F77DD)"></div>`}
     <div class="track-item-info">
       <div class="track-item-name">${t.track_title || t.title}</div>
-      <div class="track-item-artist">${t.artist_name || '—'}</div>
+      <div class="track-item-artist">${t.artist_name || '-'}</div>
     </div>
     <button class="icon-btn" onclick="addToFavorites(${JSON.stringify(t).replace(/"/g,'&quot;')}, event)">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -193,7 +187,6 @@ const trackItem = (t, idx, list) => `
     </button>
   </div>`;
 
-// Загрузить все треки
 async function loadAllTracks() {
   const data = await API.tracks.list(20, allOffset);
   const tracks = (data.tracks || []).filter(t => t.audio_url);
@@ -203,7 +196,6 @@ async function loadAllTracks() {
   allOffset += tracks.length;
 }
 
-// Загрузить треки жанра
 async function loadGenreTracks(tag) {
   const data = await API.jamendo.tracks({ limit: 20, genre: tag, offset: genreOffset, audioformat: 'mp32' });
   const raw = data.tracks || [];
@@ -219,17 +211,17 @@ async function openGenre(tag, label, bg) {
   genreOffset = 0;
   genreTracks = [];
   document.getElementById('genresView').style.display = 'none';
-  document.getElementById('genreView').style.display  = 'block';
-  document.getElementById('genreTitle').textContent   = label;
-  document.getElementById('genreBadge').textContent   = label;
-  document.getElementById('genreBadge').style.background = bg.split(',')[0].replace('linear-gradient(135deg','').replace('(','');
+  document.getElementById('genreView').style.display = 'block';
+  document.getElementById('genreTitle').textContent = label;
+  document.getElementById('genreBadge').textContent = label;
+  document.getElementById('genreBadge').style.background = bg.split(',')[0].replace('linear-gradient(135deg', '').replace('(', '');
   document.getElementById('genreTracksGrid').innerHTML =
     '<div class="skeleton" style="height:200px;border-radius:12px;grid-column:span 2"></div>';
   await loadGenreTracks(tag);
 }
 
 document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('genreView').style.display  = 'none';
+  document.getElementById('genreView').style.display = 'none';
   document.getElementById('genresView').style.display = 'block';
 });
 
@@ -241,7 +233,12 @@ function playFrom(idx, list) {
   Player.setQueue(tracks, idx);
 }
 
-// Инициализация
+function preloadFrom(idx, list) {
+  const tracks = list === 'all' ? allTracks : genreTracks;
+  if (!tracks[idx]) return;
+  Player.preload(tracks[idx]);
+}
+
 loadAllTracks();
 </script>
 </body>
